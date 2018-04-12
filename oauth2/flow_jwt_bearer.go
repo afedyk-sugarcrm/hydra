@@ -16,6 +16,7 @@ import (
 	"github.com/ory/fosite/handler/oauth2"
 	"github.com/ory/fosite/handler/openid"
 	"github.com/pkg/errors"
+	"github.com/ory/hydra/integration/idp"
 )
 
 // JWT bearer grant type mark. According to the latest https://tools.ietf.org/html/rfc7523
@@ -126,6 +127,16 @@ func (c *JWTBearerGrantHandler) HandleTokenEndpointRequest(ctx context.Context, 
 	if val, ok := claims["sub"].(string); !ok || val == "" {
 		return errors.Wrap(fosite.ErrTokenClaim, "Subject (sub) claim should be a nonempty string")
 	}
+	{
+		sub := claims["sub"].(string)
+		if userData, err := idp.GetUser(sub); err != nil || userData.Name != sub  {
+			return errors.Wrapf(fosite.ErrTokenClaim, "Subject (sub) %s claim should belong to tenant", sub)
+		}
+	}
+
+	fmt.Printf("+++++tnt:%s sub:%s \n", claims["tnt"].(string), claims["sub"].(string) )
+
+
 	// For https://tools.ietf.org/html/rfc7523#section-3.3
 	if !claims.VerifyAudience(c.Audience, true) {
 		return errors.Wrap(fosite.ErrTokenClaim, "Audience (aud) is invalid or missing")

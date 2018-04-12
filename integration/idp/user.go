@@ -14,10 +14,9 @@ import (
 
 )
 
-func GetUser(tenantId, userId string)  (*user.User, error) {
-
-
-	userSrn, err := srn.Build(partition, region).User(tenantId, userId)
+func GetUser(userSRN string) (*user.User, error)  {
+	rn, err := srn.Create(userSRN)
+	//userSrn, err := srn.Build(partition, region).User(tenantId, userSRN)
 	if err != nil {
 		return nil, err
 	}
@@ -26,21 +25,16 @@ func GetUser(tenantId, userId string)  (*user.User, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	defer sdkClient.Close() // todo it may be should be moved up
 
-	idpc, err := sdkClient.UserAPI(region)
+
+	idpc, err := sdkClient.UserAPI(rn.Region) // TODO where i should get Region
 	if err != nil {
 		return nil, err
 	}
 
-	return idpc.GetUser(context.Background(), &user.GetUserRequest{Name: userSrn.ToString()})
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	//return userData, nil
-	//return userData.Name == userSrn.ToString()
-	//return nil, fmt.Errorf("User %s Not exists in tenant:%s.", userId, tenantId)
+	return idpc.GetUser(context.Background(), &user.GetUserRequest{Name: userSRN})
 }
 
 func getSDKClient() (*sdk.Client, error) {
